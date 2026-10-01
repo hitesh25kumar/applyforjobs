@@ -8,10 +8,13 @@ import { Logger } from '@nestjs/common';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
-  const corsOrigins = process.env.CORS_ORIGINS
+  const configuredCorsOrigins = process.env.CORS_ORIGINS
     ?.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean) || ['http://localhost:5173', 'http://localhost:5174'];
+  const corsOrigins = [
+    ...new Set([...configuredCorsOrigins, 'https://applyforjobs.web.app']),
+  ];
 
   // Enable CORS for frontend
   app.enableCors({
