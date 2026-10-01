@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: job-applyer-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    disk:
+      name: automation-session
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AUTOMATION_HEADLESS
+        value: "true"
+      - key: AUTOMATION_USER_DATA_DIR
+        value: /var/data/browser-profile
+      - key: NAUKRI_SESSION_PATH
+        value: /var/data/browser-profile/naukri/storage-state.json
+      - key: LINKEDIN_STORAGE_STATE
+        sync: false
+      - key: INSTAGRAM_STORAGE_STATE
+        sync: false
+      - key: NAUKRI_STORAGE_STATE
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
