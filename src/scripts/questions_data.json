@@ -1,0 +1,229 @@
+{
+    "personal": {
+        "fullName": "",
+        "email": "",
+        "phone": "",
+        "location": {
+            "city": "",
+            "state": "",
+            "country": ""
+        },
+        "linkedinUrl": "",
+        "portfolioUrl": "",
+        "githubUrl": ""
+    },
+    "professional": {
+        "currentCompany": "",
+        "currentTitle": "",
+        "totalExperienceYears": 0,
+        "noticePeriodDays": 0,
+        "currentCTC": "",
+        "expectedCTC": "",
+        "willingToRelocate": true,
+        "preferredWorkMode": "Remote"
+    },
+    "education": {
+        "highestQualification": "",
+        "hasBachelorsDegree": false,
+        "hasMastersDegree": false,
+        "certifications": []
+    },
+    "skillsExperience": {
+        "nodejs": 0,
+        "react": 0,
+        "springBoot": 0,
+        "coreJava": 0,
+        "microservices": 0,
+        "restApis": 0,
+        "mongodb": 0,
+        "javascript": 0,
+        "typescript": 0,
+        "aws": 0,
+        "docker": 0,
+        "kubernetes": 0
+    },
+    "screeningQuestions": [
+        {
+            "id": "exp_relevant_generic",
+            "question": "How many years of relevant work experience do you have?",
+            "type": "number",
+            "answerKey": "professional.totalExperienceYears"
+        },
+        {
+            "id": "exp_total_generic",
+            "question": "What is your total work experience in years?",
+            "type": "number",
+            "answerKey": "professional.totalExperienceYears"
+        },
+        {
+            "id": "exp_overall",
+            "question": "How many years of total work experience do you have?",
+            "type": "number",
+            "answerKey": "professional.totalExperienceYears"
+        },
+        {
+            "id": "exp_nodejs",
+            "question": "How many years of work experience do you have with Node.js?",
+            "type": "number",
+            "answerKey": "skillsExperience.nodejs"
+        },
+        {
+            "id": "exp_springboot",
+            "question": "How many years of work experience do you have with Spring Boot?",
+            "type": "number",
+            "answerKey": "skillsExperience.springBoot"
+        },
+        {
+            "id": "exp_corejava",
+            "question": "How many years of work experience do you have with Core Java?",
+            "type": "number",
+            "answerKey": "skillsExperience.coreJava"
+        },
+        {
+            "id": "exp_microservices",
+            "question": "How many years of work experience do you have with Microservices?",
+            "type": "number",
+            "answerKey": "skillsExperience.microservices"
+        },
+        {
+            "id": "exp_restapis",
+            "question": "How many years of work experience do you have with REST APIs?",
+            "type": "number",
+            "answerKey": "skillsExperience.restApis"
+        },
+        {
+            "id": "degree_bachelor",
+            "question": "Have you completed the following level of education: Bachelor's Degree?",
+            "type": "boolean",
+            "answerKey": "education.hasBachelorsDegree"
+        },
+        {
+            "id": "notice_period",
+            "question": "What is your notice period in days?",
+            "type": "number",
+            "answerKey": "professional.noticePeriodDays"
+        },
+        {
+            "id": "current_ctc",
+            "question": "What is your current CTC?",
+            "type": "string",
+            "answerKey": "professional.currentCTC"
+        },
+        {
+            "id": "expected_ctc",
+            "question": "What is your expected CTC?",
+            "type": "string",
+            "answerKey": "professional.expectedCTC"
+        },
+        {
+            "id": "relocate",
+            "question": "Are you open for relocation?",
+            "type": "boolean",
+            "answerKey": "professional.willingToRelocate"
+        },
+        {
+            "id": "work_auth_us",
+            "question": "Are you legally authorized to work in the United States?",
+            "type": "boolean",
+            "answerKey": "profile.rightToWork"
+        },
+        {
+            "id": "sponsorship_future",
+            "question": "Will you now or in the future require sponsorship for employment visa status (e.g., H-1B visa status)?",
+            "type": "boolean",
+            "answerKey": "profile.sponsorship"
+        },
+        {
+            "id": "commute_t_f",
+            "question": "Are you comfortable commuting to this job's location?",
+            "type": "boolean",
+            "answerKey": "professional.willingToRelocate"
+        },
+        {
+            "id": "background_check",
+            "question": "Are you willing to undergo a background check, in accordance with local law/regulations?",
+            "type": "boolean",
+            "answer": "Yes"
+        },
+        {
+            "id": "start_date_immediate",
+            "question": "Can you start immediately?",
+            "type": "boolean",
+            "answerKey": "profile.canJoinIn15Days"
+        },
+        {
+            "id": "drivers_license",
+            "question": "Do you have a valid driver's license?",
+            "type": "boolean",
+            "answer": "Yes"
+        },
+        {
+            "id": "remote_work",
+            "question": "Are you comfortable working remotely?",
+            "type": "boolean",
+            "answer": "Yes"
+        },
+        {
+            "id": "hybrid_work",
+            "question": "Are you comfortable working in a hybrid setting?",
+            "type": "boolean",
+            "answerKey": "profile.openToHybrid"
+        },
+        {
+            "id": "proficiency_english",
+            "question": "What is your proficiency in English?",
+            "type": "text",
+            "answer": "Professional"
+        },
+        {
+            "id": "drug_test",
+            "question": "Are you willing to take a drug test, in accordance with local law/regulations?",
+            "type": "boolean",
+            "answer": "Yes"
+        },
+        {
+            "id": "education_master",
+            "question": "Have you completed the following level of education: Master's Degree?",
+            "type": "boolean",
+            "answerKey": "education.hasMastersDegree"
+        },
+        {
+            "id": "gender",
+            "question": "What is your gender?",
+            "type": "text",
+            "answer": "Prefer not to say"
+        },
+        {
+            "id": "veteran_status",
+            "question": "Are you a protected veteran?",
+            "type": "boolean",
+            "answer": "No"
+        },
+        {
+            "id": "disability_status",
+            "question": "Do you have a disability?",
+            "type": "text",
+            "answer": "No"
+        }
+    ],
+    "openEndedQuestions": [
+        {
+            "id": "why_role",
+            "question": "Why are you interested in this role?",
+            "type": "text",
+            "answer": ""
+        },
+        {
+            "id": "why_company",
+            "question": "Why do you want to work for this company?",
+            "type": "text",
+            "answer": ""
+        },
+        {
+            "id": "key_achievement",
+            "question": "Describe one major achievement relevant to this role.",
+            "type": "text",
+            "answer": ""
+        }
+    ]
+}
