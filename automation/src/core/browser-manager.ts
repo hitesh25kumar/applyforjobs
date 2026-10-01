@@ -32,7 +32,8 @@ export class BrowserManager {
         fs.mkdirSync(this.userDataDir, { recursive: true });
         const storageState = await SessionManager.loadSession(this.sessionPath, 'LINKEDIN_STORAGE_STATE');
         this.browser = await chromium.launch({
-            headless: process.env.AUTOMATION_HEADLESS === 'true',
+            headless: process.env.NODE_ENV === 'production'
+                || process.env.AUTOMATION_HEADLESS?.toLowerCase() === 'true',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
