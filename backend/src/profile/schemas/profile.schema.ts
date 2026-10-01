@@ -26,10 +26,10 @@ export class SkillExperience {
 
 @Schema({ timestamps: true })
 export class Profile {
-    @Prop({ required: true })
+    @Prop({ default: '' })
     firstName: string;
 
-    @Prop({ required: true })
+    @Prop({ default: '' })
     lastName: string;
 
     @Prop({ required: true })
