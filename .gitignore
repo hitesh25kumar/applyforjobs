@@ -1,20 +1,11 @@
-# Environment secrets
-.env
-.env.*
-!.env.example
-!.env.template
-
-# Dependencies and build output
-node_modules/
-dist/
-build/
-coverage/
-
-# Browser profiles and session state
-user_data/
-instagram_user_data/
-../automation/user_data/
-../automation/sessions/*.json
-
-# Credentials and local data
-*firebase-adminsdk*.json
+**/*firebase-adminsdk*.json
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.template
+**/node_modules/
+**/dist/
+**/build/
+**/user_data/
+**/*_user_data/
+**/sessions/*.json
