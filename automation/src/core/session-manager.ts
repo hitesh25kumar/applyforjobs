@@ -14,16 +14,6 @@ export class SessionManager {
     }
 
     static async loadSession(sessionPath: string, envKey?: string): Promise<any | null> {
-        if (fs.existsSync(sessionPath)) {
-            try {
-                const state = JSON.parse(fs.readFileSync(sessionPath, 'utf8'));
-                console.log(`[Session] Loaded existing state from ${sessionPath}`);
-                return state;
-            } catch (e) {
-                console.error(`[Session] Failed to parse session file: ${sessionPath}`);
-            }
-        }
-
         const serializedState = envKey ? process.env[envKey] : undefined;
         if (serializedState) {
             try {
@@ -31,12 +21,27 @@ export class SessionManager {
                 if (!state || !Array.isArray(state.cookies)) {
                     throw new Error('Storage state must contain a cookies array');
                 }
+                console.log(`[Session] Loaded state from ${envKey}`);
                 return state;
             } catch (error) {
                 console.error(`[Session] Invalid JSON in ${envKey}:`, (error as Error).message);
             }
         }
 
+        if (fs.existsSync(sessionPath)) {
+            try {
+                const state = JSON.parse(fs.readFileSync(sessionPath, 'utf8'));
+                if (!state || !Array.isArray(state.cookies)) {
+                    throw new Error('Storage state must contain a cookies array');
+                }
+                console.log(`[Session] Loaded existing state from ${sessionPath}`);
+                return state;
+            } catch (e) {
+                console.error(`[Session] Failed to load session file ${sessionPath}:`, (e as Error).message);
+            }
+        }
+
+        console.warn(`[Session] No saved state found at ${sessionPath}${envKey ? ` or in ${envKey}` : ''}`);
         return null;
     }
 }

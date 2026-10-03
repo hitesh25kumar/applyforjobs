@@ -96,6 +96,8 @@ export class AutomationEngine {
 
             const profileIcon = await page.locator('img.global-nav__me-photo, button.global-nav__primary-link--me').isVisible({ timeout: 5000 }).catch(() => false);
             if (!profileIcon) {
+                const pageTitle = await page.title().catch(() => '<unavailable>');
+                console.warn(`[LinkedIn Automation] Login check failed at ${page.url()} (title: ${pageTitle})`);
                 console.log('[LinkedIn Automation] ⚠ Not logged in! Please log in to LinkedIn first.');
                 throw new Error('LinkedIn login required');
             }

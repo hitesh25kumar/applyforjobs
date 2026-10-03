@@ -31,6 +31,9 @@ export class BrowserManager {
         console.log('Launching browser with user data dir:', this.userDataDir);
         fs.mkdirSync(this.userDataDir, { recursive: true });
         const storageState = await SessionManager.loadSession(this.sessionPath, 'LINKEDIN_STORAGE_STATE');
+        const hasLinkedInAuthCookie = Array.isArray(storageState?.cookies)
+            && storageState.cookies.some((cookie: { name?: string }) => cookie.name === 'li_at');
+        console.log(`[BrowserManager] LinkedIn auth cookie present: ${hasLinkedInAuthCookie}`);
         this.browser = await chromium.launch({
             headless: process.env.NODE_ENV === 'production'
                 || process.env.AUTOMATION_HEADLESS?.toLowerCase() === 'true',
