@@ -1,3 +1,5 @@
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+
 export class UpdateProfileDto {
     firstName?: string;
     lastName?: string;
@@ -28,8 +30,19 @@ export class UpdateProfileDto {
     skipContactStepIfFilled?: boolean;
     skipResumeStepIfFilled?: boolean;
     domainsExperience?: { skill: string; years: number }[];
+
+    @IsOptional()
+    @IsString()
     defaultJobKeyword?: string;
+
+    @IsOptional()
+    @IsString()
     defaultLocation?: string;
+
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    @Max(100)
     defaultMaxJobs?: number;
     reportedQuestions?: string[];
     noExperience?: number;
