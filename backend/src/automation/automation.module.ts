@@ -11,6 +11,8 @@ import { InstagramAutomationService } from './instagram-automation.service';
 import { AutomationWorker } from './automation.worker';
 import { ApplicationsModule } from '../applications/applications.module';
 import { QuestionsModule } from '../questions/questions.module';
+import { AuthModule } from '../auth/auth.module';
+import { LocalRunnerService } from './local-runner.service';
 
 @Module({
     imports: [
@@ -18,10 +20,11 @@ import { QuestionsModule } from '../questions/questions.module';
         ProfileModule,
         ApplicationsModule,
         QuestionsModule,
+        AuthModule,
         ScheduleModule.forRoot()
     ],
     controllers: [AutomationController],
-    providers: [AutomationService, NaukriAutomationService, InstagramAutomationService, AutomationWorker],
+    providers: [AutomationService, NaukriAutomationService, InstagramAutomationService, AutomationWorker, LocalRunnerService],
     exports: [AutomationService, NaukriAutomationService, InstagramAutomationService],
 })
 export class AutomationModule { }

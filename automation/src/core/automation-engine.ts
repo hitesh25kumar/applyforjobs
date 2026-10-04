@@ -95,7 +95,13 @@ export class AutomationEngine {
             await page.waitForTimeout(5000);
 
             const profileIcon = await page.locator('img.global-nav__me-photo, button.global-nav__primary-link--me').isVisible({ timeout: 5000 }).catch(() => false);
-            if (!profileIcon) {
+            const pagePath = new URL(page.url()).pathname;
+            const isAuthenticationPage = /\/(login|checkpoint|authwall)(\/|$)/i.test(pagePath);
+            const hasAuthCookie = await page.context()
+                .cookies('https://www.linkedin.com')
+                .then(cookies => cookies.some(cookie => cookie.name === 'li_at'))
+                .catch(() => false);
+            if (!profileIcon && (!hasAuthCookie || isAuthenticationPage)) {
                 const pageTitle = await page.title().catch(() => '<unavailable>');
                 console.warn(`[LinkedIn Automation] Login check failed at ${page.url()} (title: ${pageTitle})`);
                 console.log('[LinkedIn Automation] ⚠ Not logged in! Please log in to LinkedIn first.');

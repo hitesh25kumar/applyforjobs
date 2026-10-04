@@ -19,6 +19,17 @@
 
 The Render service uses the Dockerfile's Playwright image and a persistent disk for browser profiles. Production automation runs headless. An expired session will fail its login check; there is no interactive browser on Render. Do not copy a browser profile or service-account key into the repository or Docker image.
 
+## LinkedIn Local Browser
+
+To sign in on your own computer and keep LinkedIn cookies off Render:
+
+1. In the deployed app's LinkedIn automation dialog, select **Run in a browser on this computer** and choose **Connect local browser**.
+2. On the same computer, open a checkout of this repository and run the displayed command from its root. It installs the automation package, starts the local runner, and connects it to the deployed API.
+3. Enter the pairing code in the terminal. The runner opens a visible LinkedIn browser; sign in and complete any verification, then return to the terminal and press Enter.
+4. Once the app shows **Browser connected**, start the LinkedIn job. Keep the terminal and browser open until it finishes.
+
+The pairing code expires after 10 minutes. The local LinkedIn profile is stored under `~/.job-applyer/browser-profile`; it is not uploaded to Render. Pair again after restarting the local runner or if the deployed API restarts.
+
 ## Firebase Hosting
 
 1. Configure the Firebase web-app values from Firebase Console in `frontend/.env.production.local`, including `VITE_API_URL=https://<render-service>.onrender.com`.

@@ -1,8 +1,11 @@
-import { Controller, Post, Get, Body, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpException, HttpStatus, Logger, UseGuards, Request, Headers, Param, UnauthorizedException } from '@nestjs/common';
 import { AutomationService } from './automation.service';
 import { NaukriAutomationService } from './naukri-automation.service';
 import { InstagramAutomationService } from './instagram-automation.service';
 import { StartLinkedInAutomationDto, StartNaukriAutomationDto, StartInstagramAutomationDto } from './dto/automation.dto';
+import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
+import { LocalRunnerService } from './local-runner.service';
+import { Request as ExpressRequest } from 'express';
 
 @Controller('automation')
 export class AutomationController {
@@ -11,8 +14,55 @@ export class AutomationController {
     constructor(
         private readonly automationService: AutomationService,
         private readonly naukriService: NaukriAutomationService,
-        private readonly instagramService: InstagramAutomationService
+        private readonly instagramService: InstagramAutomationService,
+        private readonly localRunnerService: LocalRunnerService,
     ) { }
+
+    @Post('local-runner/pair')
+    @UseGuards(FirebaseAuthGuard)
+    createLocalRunnerPairing(@Request() request: ExpressRequest & { user: { firebaseUid: string } }) {
+        return this.localRunnerService.createPairingCode(request.user.firebaseUid);
+    }
+
+    @Post('local-runner/claim')
+    claimLocalRunner(@Body('code') code: string) {
+        return this.localRunnerService.claimPairingCode(code);
+    }
+
+    @Get('local-runner/status')
+    @UseGuards(FirebaseAuthGuard)
+    getLocalRunnerStatus(@Request() request: ExpressRequest & { user: { firebaseUid: string } }) {
+        return this.localRunnerService.getStatus(request.user.firebaseUid);
+    }
+
+    @Post('local-runner/jobs')
+    @UseGuards(FirebaseAuthGuard)
+    queueLocalLinkedInJob(
+        @Request() request: ExpressRequest & { user: { firebaseUid: string } },
+        @Body() body: StartLinkedInAutomationDto,
+    ) {
+        return this.localRunnerService.queueJob(request.user.firebaseUid, body);
+    }
+
+    @Get('local-runner/next')
+    getLocalRunnerJob(@Headers('authorization') authorization?: string) {
+        return this.localRunnerService.getNextJob(this.extractRunnerToken(authorization));
+    }
+
+    @Post('local-runner/jobs/:jobId/result')
+    completeLocalRunnerJob(
+        @Headers('authorization') authorization: string | undefined,
+        @Param('jobId') jobId: string,
+        @Body() body: any,
+    ) {
+        return this.localRunnerService.completeJob(this.extractRunnerToken(authorization), jobId, body);
+    }
+
+    private extractRunnerToken(authorization?: string): string {
+        const [type, token] = authorization?.split(' ') || [];
+        if (type !== 'Bearer' || !token) throw new UnauthorizedException('Local runner token is required');
+        return token;
+    }
 
     @Post('start')
     async startAutomation() {

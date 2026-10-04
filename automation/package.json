@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "test:naukri": "ts-node src/run-naukri-manual.ts",
-    "session:export": "ts-node src/export-session.ts"
+    "session:export": "ts-node src/export-session.ts",
+    "linkedin:local": "ts-node src/run-linkedin-local.ts"
   },
   "keywords": [],
   "author": "",

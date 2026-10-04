@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Briefcase } from 'lucide-react';
+import { X, Briefcase, Copy, Check, MonitorPlay } from 'lucide-react';
 import api from '../api/client';
 
 interface LinkedInJobSearchModalProps {
@@ -23,6 +23,16 @@ export const LinkedInJobSearchModal: React.FC<LinkedInJobSearchModalProps> = ({
     const [maxJobs, setMaxJobs] = useState(10);
     const [saveAsDefault, setSaveAsDefault] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [useLocalBrowser, setUseLocalBrowser] = useState(false);
+    const [pairingCode, setPairingCode] = useState('');
+    const [localRunnerConnected, setLocalRunnerConnected] = useState(false);
+    const [isPairing, setIsPairing] = useState(false);
+    const [commandCopied, setCommandCopied] = useState(false);
+
+    const runnerApiUrl = (import.meta.env.VITE_API_URL
+        || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin))
+        .replace(/\/$/, '');
+    const runnerCommand = `cd automation && npm ci && npm run linkedin:local -- --api ${runnerApiUrl}`;
 
     // Fetch profile if not provided
     useEffect(() => {
@@ -42,12 +52,56 @@ export const LinkedInJobSearchModal: React.FC<LinkedInJobSearchModalProps> = ({
         }
     }, [profile]);
 
+    useEffect(() => {
+        if (!isOpen || !useLocalBrowser || !pairingCode) return;
+
+        let active = true;
+        const checkRunner = async () => {
+            try {
+                const response = await api.get('/automation/local-runner/status');
+                if (active) setLocalRunnerConnected(Boolean(response.data.connected));
+            } catch {
+                if (active) setLocalRunnerConnected(false);
+            }
+        };
+
+        void checkRunner();
+        const interval = window.setInterval(checkRunner, 4000);
+        return () => {
+            active = false;
+            window.clearInterval(interval);
+        };
+    }, [isOpen, useLocalBrowser, pairingCode]);
+
     const fetchProfile = async () => {
         try {
             const response = await api.get('/profile');
             setProfile(response.data);
         } catch (err) {
             console.error('Failed to fetch profile:', err);
+        }
+    };
+
+    const connectLocalRunner = async () => {
+        setIsPairing(true);
+        setLocalRunnerConnected(false);
+        try {
+            const response = await api.post('/automation/local-runner/pair');
+            setPairingCode(response.data.code);
+        } catch (error: any) {
+            onError(error.response?.data?.message || 'Could not create a local browser pairing code.');
+        } finally {
+            setIsPairing(false);
+        }
+    };
+
+    const copyRunnerCommand = async () => {
+        try {
+            await navigator.clipboard.writeText(runnerCommand);
+            setCommandCopied(true);
+            window.setTimeout(() => setCommandCopied(false), 1800);
+        } catch {
+            onError('Clipboard access was unavailable. Copy the command shown below.');
         }
     };
 
@@ -67,17 +121,19 @@ export const LinkedInJobSearchModal: React.FC<LinkedInJobSearchModalProps> = ({
                 });
             }
 
-            await api.post('/automation/linkedin/start', {
+            await api.post(useLocalBrowser ? '/automation/local-runner/jobs' : '/automation/linkedin/start', {
                 keyword,
                 location: location || undefined,
                 maxJobs,
             });
 
-            onSuccess(`LinkedIn automation started! Applying to ${maxJobs} "${keyword}" jobs.`);
+            onSuccess(useLocalBrowser
+                ? `LinkedIn job queued for your local browser: ${maxJobs} "${keyword}" jobs.`
+                : `LinkedIn automation started! Applying to ${maxJobs} "${keyword}" jobs.`);
             onClose();
         } catch (error) {
             console.error(error);
-            onError('Failed to start LinkedIn automation. Make sure you are logged into LinkedIn.');
+            onError((error as any).response?.data?.message || 'Failed to start LinkedIn automation.');
         } finally {
             setIsSubmitting(false);
         }
@@ -147,6 +203,69 @@ export const LinkedInJobSearchModal: React.FC<LinkedInJobSearchModalProps> = ({
                         <p className="text-xs text-slate-500 mt-1">Recommended: 5-15 jobs per session</p>
                     </div>
 
+                    <div className="rounded-lg border border-slate-200 p-3">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <input
+                                type="checkbox"
+                                checked={useLocalBrowser}
+                                onChange={(event) => setUseLocalBrowser(event.target.checked)}
+                                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            Run in a browser on this computer
+                        </label>
+                        {useLocalBrowser && (
+                            <div className="mt-3 border-t border-slate-200 pt-3">
+                                {!pairingCode ? (
+                                    <button
+                                        type="button"
+                                        onClick={connectLocalRunner}
+                                        disabled={isPairing}
+                                        className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                                    >
+                                        <MonitorPlay className="size-4" />
+                                        {isPairing ? 'Preparing...' : 'Connect local browser'}
+                                    </button>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-xs text-slate-500">Pairing code</p>
+                                                <p className="font-mono text-lg font-semibold tracking-widest text-slate-900">{pairingCode}</p>
+                                            </div>
+                                            <span className={`text-xs font-medium ${localRunnerConnected ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                                {localRunnerConnected ? 'Browser connected' : 'Waiting for local runner'}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-600">On this computer, run the command and enter the pairing code. The browser session stays on this computer.</p>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-xs text-slate-500">Code expires after 10 minutes.</p>
+                                            <button
+                                                type="button"
+                                                onClick={connectLocalRunner}
+                                                disabled={isPairing}
+                                                className="text-xs font-medium text-blue-700 hover:text-blue-900 disabled:opacity-50"
+                                            >
+                                                {isPairing ? 'Generating...' : 'Generate new code'}
+                                            </button>
+                                        </div>
+                                        <div className="flex items-start gap-2 rounded-md bg-slate-50 p-2">
+                                            <code className="min-w-0 flex-1 break-all text-xs text-slate-700">{runnerCommand}</code>
+                                            <button
+                                                type="button"
+                                                onClick={copyRunnerCommand}
+                                                title="Copy local runner command"
+                                                aria-label="Copy local runner command"
+                                                className="shrink-0 rounded p-1 text-slate-600 hover:bg-slate-200"
+                                            >
+                                                {commandCopied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     <div className="flex items-center gap-2 py-1">
                         <input
                             type="checkbox"
@@ -162,8 +281,9 @@ export const LinkedInJobSearchModal: React.FC<LinkedInJobSearchModalProps> = ({
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <p className="text-xs text-blue-800">
-                            <strong>Note:</strong> Make sure you're logged into LinkedIn in your browser.
-                            The automation will only apply to Easy Apply jobs.
+                            <strong>Note:</strong> {useLocalBrowser
+                                ? 'The local runner opens LinkedIn for sign-in and only applies to Easy Apply jobs.'
+                                : "The hosted browser must already have a valid LinkedIn session. Only Easy Apply jobs are supported."}
                         </p>
                     </div>
 
@@ -177,7 +297,7 @@ export const LinkedInJobSearchModal: React.FC<LinkedInJobSearchModalProps> = ({
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting || !keyword}
+                            disabled={isSubmitting || !keyword || (useLocalBrowser && !localRunnerConnected)}
                             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? 'Starting...' : 'Start Applying'}

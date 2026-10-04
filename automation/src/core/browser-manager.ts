@@ -34,9 +34,10 @@ export class BrowserManager {
         const hasLinkedInAuthCookie = Array.isArray(storageState?.cookies)
             && storageState.cookies.some((cookie: { name?: string }) => cookie.name === 'li_at');
         console.log(`[BrowserManager] LinkedIn auth cookie present: ${hasLinkedInAuthCookie}`);
+        const headlessSetting = process.env.AUTOMATION_HEADLESS?.toLowerCase();
         this.browser = await chromium.launch({
-            headless: process.env.NODE_ENV === 'production'
-                || process.env.AUTOMATION_HEADLESS?.toLowerCase() === 'true',
+            headless: headlessSetting === 'true'
+                || (headlessSetting !== 'false' && process.env.NODE_ENV === 'production'),
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
