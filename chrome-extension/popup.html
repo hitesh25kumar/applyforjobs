@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Job Applyer Assistant</title>
+    <style>
+      body { width: 340px; margin: 0; padding: 16px; color: #0f172a; font: 14px system-ui, sans-serif; }
+      h1 { margin: 0 0 12px; font-size: 17px; }
+      label { display: block; margin: 12px 0 5px; font-weight: 600; }
+      input { box-sizing: border-box; width: 100%; padding: 9px; border: 1px solid #cbd5e1; border-radius: 7px; }
+      button { width: 100%; margin-top: 9px; padding: 10px; border: 0; border-radius: 7px; background: #1d4ed8; color: white; font-weight: 650; cursor: pointer; }
+      button:disabled { opacity: .55; cursor: wait; }
+      button.secondary { background: #334155; }
+      #status { display: inline-block; margin: 0 0 8px; text-transform: capitalize; font-weight: 700; }
+      #status[data-status="connected"] { color: #047857; }
+      #status[data-status="error"] { color: #b91c1c; }
+      #message { min-height: 32px; margin: 10px 0 0; color: #475569; line-height: 1.4; }
+      #message[data-kind="error"] { color: #b91c1c; }
+      .note { margin: 12px 0 0; color: #64748b; font-size: 12px; line-height: 1.4; }
+    </style>
+  </head>
+  <body>
+    <h1>Job Applyer Assistant</h1>
+    <div>Connection: <span id="status" data-status="connecting">connecting</span></div>
+    <label for="api-url">API URL</label>
+    <input id="api-url" autocomplete="url" value="__API_BASE_URL__">
+    <label for="pairing-code">Dashboard pairing code</label>
+    <input id="pairing-code" autocomplete="one-time-code" maxlength="40">
+    <button id="pair">Connect extension</button>
+    <button id="prepare" class="secondary" disabled>Prepare current job</button>
+    <label for="task-id">Prepared job task</label>
+    <input id="task-id" readonly>
+    <button id="fill" class="secondary" disabled>Prepare form fields</button>
+    <button id="disconnect" class="secondary" hidden>Disconnect</button>
+    <p id="message" role="status" aria-live="polite"></p>
+    <p class="note">Job data is read only when you click. The extension never submits, clicks application buttons, or reads cookies. Review every field and submit manually.</p>
+    <script src="popup.js"></script>
+  </body>
+</html>

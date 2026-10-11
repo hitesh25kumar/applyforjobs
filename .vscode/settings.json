@@ -1,0 +1,9 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /Users/pakiya/Documents/job-applyer/backend/backend && npm test -- --runInBand$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "mkdir": true
+    }
+}

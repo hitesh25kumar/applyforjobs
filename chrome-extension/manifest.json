@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Job Applyer Assistant",
+  "version": "1.0.1",
+  "description": "Prepare job application forms with your profile and review every field before submitting.",
+  "action": {
+    "default_title": "Job Applyer Assistant",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:5173/*",
+        "https://*.web.app/*",
+        "https://*.firebaseapp.com/*"
+      ],
+      "js": ["dashboard-bridge.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "permissions": [
+    "activeTab",
+    "alarms",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://job-applyer-api.onrender.com/*",
+    "http://localhost:5173/*",
+    "https://*.web.app/*",
+    "https://*.firebaseapp.com/*"
+  ]
+}

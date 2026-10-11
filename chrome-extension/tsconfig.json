@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "none",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": [],
+    "noEmitOnError": true
+  },
+  "files": [
+    "src/chrome.d.ts",
+    "src/contracts.ts",
+    "src/adapter.ts",
+    "src/dashboard-bridge.ts",
+    "src/background.ts",
+    "src/popup.ts"
+  ]
+}

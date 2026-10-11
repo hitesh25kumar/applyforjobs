@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+**/user_data
+**/*_user_data
+**/sessions/*.json
+**/*firebase-adminsdk*.json
+profile_dump.json
+data
+db_data
+mongodb_bin

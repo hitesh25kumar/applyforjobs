@@ -1,0 +1,39 @@
+{
+  "what is your favorite color": {
+    "question": "What is your favorite color?",
+    "type": "text",
+    "createdAt": "2026-02-04T04:21:19.296Z",
+    "usageCount": 2,
+    "answer": "Blue"
+  },
+  "what is your total year of experience": {
+    "question": "what is your total year of experience?",
+    "type": "text",
+    "createdAt": "2026-02-07T15:57:43.667Z",
+    "usageCount": 0
+  },
+  "what is relevant years of experience": {
+    "question": "what is relevant years of experience?",
+    "type": "text",
+    "createdAt": "2026-02-07T15:57:43.730Z",
+    "usageCount": 0
+  },
+  "yes": {
+    "question": "Yes",
+    "type": "text",
+    "createdAt": "2026-09-30T16:59:21.706Z",
+    "usageCount": 0
+  },
+  "have you worked in any fintech  bank  crypto based company": {
+    "question": "Have You Worked In Any Fintech / Bank / Crypto Based Company?",
+    "type": "text",
+    "createdAt": "2026-09-30T17:11:28.062Z",
+    "usageCount": 0
+  },
+  "have you worked on systems interfacing directly with financial exchanges for fee collection collateral transfers or order execution": {
+    "question": "Have you worked on systems interfacing directly with financial exchanges for fee collection, collateral transfers, or order execution?",
+    "type": "text",
+    "createdAt": "2026-09-30T17:11:28.257Z",
+    "usageCount": 0
+  }
+}
