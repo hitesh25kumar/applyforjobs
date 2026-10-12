@@ -24,6 +24,7 @@ interface SearchRun {
     startedAt?: string;
     completedAt?: string;
     createdAt: string;
+    updatedAt?: string;
 }
 
 interface Lead {
@@ -73,8 +74,20 @@ export const RecruiterDiscovery = () => {
     const [busy, setBusy] = useState(false);
     const [streamState, setStreamState] = useState<'connecting' | 'live' | 'offline'>('connecting');
     const [maxPosts, setMaxPosts] = useState(25);
+    const [feedClock, setFeedClock] = useState(Date.now());
     const lastEventId = useRef('');
     const logsEndRef = useRef<HTMLDivElement>(null);
+    const latestLog = logs[logs.length - 1];
+    const quietSeconds = run && activeStatuses.includes(run.status)
+        ? Math.max(0, Math.floor((feedClock - new Date(latestLog?.timestamp || run?.updatedAt || run?.createdAt || Date.now()).getTime()) / 1000))
+        : 0;
+    const waitingMessage = run?.status === 'queued'
+        ? 'Waiting for the paired local browser to start…'
+        : latestLog?.eventType === 'search.started'
+            ? 'Waiting for LinkedIn Posts results to load…'
+            : latestLog?.eventType === 'post.started'
+                ? 'Reading this post and saving its extracted fields…'
+                : 'Waiting for the browser to retrieve the next post…';
 
     const loadLeads = useCallback(async () => {
         try {
@@ -205,6 +218,12 @@ export const RecruiterDiscovery = () => {
     useEffect(() => {
         logsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, [logs]);
+
+    useEffect(() => {
+        if (!run || !activeStatuses.includes(run.status)) return;
+        const timer = window.setInterval(() => setFeedClock(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, [run?._id, run?.status]);
 
     const startSearch = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -432,6 +451,13 @@ export const RecruiterDiscovery = () => {
                                     ? <LoaderCircle className="h-7 w-7 animate-spin text-blue-400" />
                                     : <Activity className="h-7 w-7 text-slate-700" />}
                                 <p>{isActive ? 'Waiting for real browser activity…' : 'Search activity will appear here.'}</p>
+                            </div>
+                        )}
+                        {isActive && quietSeconds >= 3 && (
+                            <div role="status" aria-live="polite" className="flex animate-pulse items-center gap-2 rounded-lg border border-sky-900/60 bg-sky-950/60 px-3 py-2 text-sky-200">
+                                <LoaderCircle className="h-4 w-4 shrink-0 animate-spin text-sky-300" />
+                                <span>{waitingMessage}</span>
+                                <span className="ml-auto whitespace-nowrap text-[10px] text-sky-400">({quietSeconds}s)</span>
                             </div>
                         )}
                         <div ref={logsEndRef} />
