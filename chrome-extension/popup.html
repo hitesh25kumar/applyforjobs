@@ -26,15 +26,22 @@
     <label for="api-url">API URL</label>
     <input id="api-url" autocomplete="url" value="__API_BASE_URL__">
     <label for="pairing-code">Dashboard pairing code</label>
-    <input id="pairing-code" autocomplete="one-time-code" maxlength="40">
+    <input id="pairing-code" autocomplete="one-time-code" maxlength="48">
     <button id="pair">Connect extension</button>
+    <label for="target-url">Post search or source page URL</label>
+    <input id="target-url" type="url" autocomplete="url" placeholder="https://www.linkedin.com/feed/">
+    <button id="start-automation">Start Automation</button>
+    <label for="recruiter-run-id">Active recruiter run</label>
+    <input id="recruiter-run-id" readonly>
+    <button id="capture-post" class="secondary">Capture selected post</button>
+    <button id="finish-recruiter-run" class="secondary">Finish recruiter run</button>
     <button id="prepare" class="secondary" disabled>Prepare current job</button>
     <label for="task-id">Prepared job task</label>
     <input id="task-id" readonly>
     <button id="fill" class="secondary" disabled>Prepare form fields</button>
     <button id="disconnect" class="secondary" hidden>Disconnect</button>
     <p id="message" role="status" aria-live="polite"></p>
-    <p class="note">Job data is read only when you click. The extension never submits, clicks application buttons, or reads cookies. Review every field and submit manually.</p>
+    <p class="note">Start Automation opens a visible Chrome window. Capture selected post sends only text you explicitly select and submit. No automatic scrolling, bulk extraction, cookies, passwords, CAPTCHA, or MFA handling is performed. Use only where permitted by the site's terms.</p>
     <script src="popup.js"></script>
   </body>
 </html>

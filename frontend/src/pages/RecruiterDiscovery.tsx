@@ -9,6 +9,7 @@ type LogLevel = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
 
 interface SearchRun {
     _id: string;
+    executionMode?: 'local' | 'extension';
     position: string;
     searchedSkills?: string[];
     searchQuery: string;
@@ -76,18 +77,25 @@ export const RecruiterDiscovery = () => {
     const [maxPosts, setMaxPosts] = useState(25);
     const [feedClock, setFeedClock] = useState(Date.now());
     const lastEventId = useRef('');
+    const selectedRunRef = useRef<SearchRun | null>(null);
     const logsEndRef = useRef<HTMLDivElement>(null);
     const latestLog = logs[logs.length - 1];
     const quietSeconds = run && activeStatuses.includes(run.status)
         ? Math.max(0, Math.floor((feedClock - new Date(latestLog?.timestamp || run?.updatedAt || run?.createdAt || Date.now()).getTime()) / 1000))
         : 0;
-    const waitingMessage = run?.status === 'queued'
-        ? 'Waiting for the paired local browser to start…'
+    const waitingMessage = run?.executionMode === 'extension'
+        ? 'Waiting for you to select and capture another post in the Chrome extension…'
+        : run?.status === 'queued'
+            ? 'Waiting for the paired local browser to start…'
         : latestLog?.eventType === 'search.started'
             ? 'Waiting for LinkedIn Posts results to load…'
             : latestLog?.eventType === 'post.started'
                 ? 'Reading this post and saving its extracted fields…'
                 : 'Waiting for the browser to retrieve the next post…';
+
+    useEffect(() => {
+        selectedRunRef.current = run;
+    }, [run]);
 
     const loadLeads = useCallback(async () => {
         try {
@@ -154,6 +162,41 @@ export const RecruiterDiscovery = () => {
         }, 1800);
         return () => window.clearInterval(timer);
     }, [loadLeads, loadRun, run]);
+
+    useEffect(() => {
+        if (searchParams.get('runId')) return;
+        let active = true;
+        const refreshExtensionRuns = async () => {
+            try {
+                const response = await apiClient.get('/linkedin-discovery/runs');
+                if (!active) return;
+                const runs = response.data as SearchRun[];
+                setRunHistory(runs);
+                const latestExtensionRun = runs.find(item => item.executionMode === 'extension');
+                const selected = selectedRunRef.current;
+                if (
+                    latestExtensionRun
+                    && latestExtensionRun._id !== selected?._id
+                    && (!selected || new Date(latestExtensionRun.createdAt) > new Date(selected.createdAt))
+                ) {
+                    selectedRunRef.current = latestExtensionRun;
+                    lastEventId.current = '';
+                    setRun(latestExtensionRun);
+                    setPosition('');
+                    setSkillInput('');
+                    void loadActivity(latestExtensionRun._id);
+                }
+            } catch (requestError) {
+                console.error('Could not refresh Chrome extension recruiter runs:', requestError);
+            }
+        };
+        const timer = window.setInterval(() => void refreshExtensionRuns(), 3000);
+        void refreshExtensionRuns();
+        return () => {
+            active = false;
+            window.clearInterval(timer);
+        };
+    }, [loadActivity, searchParams]);
 
     useEffect(() => {
         if (!run?._id) return;
@@ -330,7 +373,7 @@ export const RecruiterDiscovery = () => {
                         <label className="min-w-0 text-sm font-medium text-slate-700">
                             Past search runs
                             <select value={searchParams.get('runId') || run?._id || ''} onChange={event => void selectPastRun(event.target.value)} className="ml-3 max-w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-normal">
-                                {runHistory.map(item => <option key={item._id} value={item._id}>{new Date(item.createdAt).toLocaleString()} · {item.position} · {item.status}</option>)}
+                                {runHistory.map(item => <option key={item._id} value={item._id}>{new Date(item.createdAt).toLocaleString()} · {item.executionMode === 'extension' ? 'Chrome extension capture' : item.position} · {item.status}</option>)}
                             </select>
                         </label>
                         <a href="/job-leads" className="text-sm font-semibold text-blue-700 hover:text-blue-900">Browse all job leads →</a>
@@ -387,6 +430,14 @@ export const RecruiterDiscovery = () => {
                 <p className="mt-3 text-xs text-slate-500">
                     Skills are optional match hints: matches are highlighted, but title-matching posts are still saved when no skill hint matches. Uses your paired visible browser; access restrictions are never bypassed.
                 </p>
+                <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-950">
+                    <p className="font-semibold">Chrome extension capture</p>
+                    <p className="mt-1">
+                        Pair the extension from the Dashboard, choose a source page in its popup, click <strong>Start Automation</strong>,
+                        then select one post on the visible page and click <strong>Capture selected post</strong>. Only the selected text is sent;
+                        page scrolling and bulk collection are not performed. Use only on sources whose terms permit this workflow.
+                    </p>
+                </div>
             </section>
 
             <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -415,6 +466,7 @@ export const RecruiterDiscovery = () => {
                     <div className="flex flex-wrap justify-between gap-2 text-xs text-slate-500">
                         <span>Search: <strong className="font-semibold text-slate-700">{run.searchQuery}</strong></span>
                         {run.searchedSkills?.length ? <span>Skill hints: <strong className="font-semibold text-slate-700">{run.searchedSkills.join(', ')}</strong></span> : null}
+                        <span>Mode: {run.executionMode === 'extension' ? 'Chrome extension · manual selection' : 'Local browser agent'}</span>
                         <span>Started: {run.startedAt ? new Date(run.startedAt).toLocaleString() : 'Waiting for local runner'}</span>
                         <span>Completed: {run.completedAt ? new Date(run.completedAt).toLocaleString() : '—'}</span>
                     </div>
@@ -513,7 +565,7 @@ export const RecruiterDiscovery = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {!leads.length && <tr><td colSpan={3} className="px-4 py-12 text-center text-sm text-slate-500">No saved posts yet. Start a search to populate results.</td></tr>}
+                                {!leads.length && <tr><td colSpan={3} className="px-4 py-12 text-center text-sm text-slate-500">No saved posts yet. Start a local search or capture selected post text with the Chrome extension.</td></tr>}
                             </tbody>
                         </table>
                     </div>

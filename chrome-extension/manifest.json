@@ -13,9 +13,7 @@
   "content_scripts": [
     {
       "matches": [
-        "http://localhost:5173/*",
-        "https://*.web.app/*",
-        "https://*.firebaseapp.com/*"
+        "http://localhost:5173/*"
       ],
       "js": ["dashboard-bridge.js"],
       "run_at": "document_start"
@@ -25,13 +23,12 @@
     "activeTab",
     "alarms",
     "scripting",
-    "storage"
+    "storage",
+    "windows"
   ],
   "host_permissions": [
     "http://localhost:3000/*",
     "https://job-applyer-api.onrender.com/*",
-    "http://localhost:5173/*",
-    "https://*.web.app/*",
-    "https://*.firebaseapp.com/*"
+    "http://localhost:5173/*"
   ]
 }

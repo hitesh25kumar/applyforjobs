@@ -1,6 +1,6 @@
 # Implementation Status
 
-Updated: 2026-10-11
+Updated: 2026-10-12
 
 ## Chrome extension implementation (2026-10-10)
 
@@ -106,7 +106,30 @@ Updated: 2026-10-11
 ### Chrome extension integration audit — phase 1 (2026-10-12)
 
 - Audited the existing MV3 package, extension API, recruiter extraction/persistence, dashboard, and available extension tests before changing browser automation. The existing extension has a service worker, popup, dashboard bridge, user-triggered JobPosting JSON-LD read/form preparation, secure one-use Firebase pairing, bearer-token heartbeat, owner-scoped Mongo task records, and retry after worker suspension.
-- Important gaps against the requested recruiter-discovery workflow: there is no user-triggered `chrome.windows.create` visible-window action; extension work concerns job application preparation rather than hiring-post extraction; the extension does not call the existing recruiter extraction or lead-save API; and its dashboard task records are separate from Recruiter Discovery's persisted run events and `RecruiterLead` records. The existing recruiter extraction, duplicate/source-key handling, and dashboard progress API remain in the backend/local-runner path. The manifest already uses MV3 and avoids cookie/password access, but dashboard host matches currently include broad Firebase Hosting subdomains.
+- Important gaps against the requested recruiter-discovery workflow: there is no user-triggered `chrome.windows.create` visible-window action; extension work concerns job application preparation rather than hiring-post extraction; the extension does not call the existing recruiter extraction or lead-save API; and its dashboard task records are separate from Recruiter Discovery's persisted run events and `RecruiterLead` records. The existing recruiter extraction, duplicate/source-key handling, and dashboard progress API remain in the backend/local-runner path. The manifest already uses MV3 and avoids cookie/password access, but dashboard host matches currently include broad Firebase Hosting subdomains. The extension package also has no README with local load/test instructions.
 - Fixed a related persistence failure without modifying browser automation: if MongoDB reports a duplicate on exactly `{ firebaseUid, sourceUrl }` (for example, a legacy unique index), lead persistence now checks that owner-scoped normalized URL after the canonical `{ firebaseUid, sourceKey }` lookup and refreshes that matching record. Other unmatched duplicate-key errors remain explicit save failures.
 - Verification: `cd chrome-extension && npm test` passed (4 tests); `cd backend/backend && npm test -- --runInBand src/recruiter/recruiter.service.spec.ts` passed (13 tests, including the legacy `{ firebaseUid, sourceUrl }` index case); `cd backend/backend && npm run build` passed. No extension behavior was changed or claimed locally verified in this audit phase.
 - Next phase: create/complete extension skeleton for the recruiter workflow, then implement and reproducibly verify the visible-window action before proceeding to pairing changes. No live deployed API/Atlas or local Chrome integration has been exercised yet.
+
+### Extension skeleton and visible-window action — phases 2–3 (2026-10-12)
+
+- Added recruiter-workflow popup controls for a user-supplied post/search URL, **Start Automation**, and explicit selected-post capture. The action opens a focused normal Chrome window through `chrome.windows.create`; it rejects non-HTTPS destinations except localhost development and does not interact with the opened page.
+- Added the MV3 `windows` permission and removed broad Firebase Hosting wildcard matches. Production builds can add one exact dashboard origin using `JOB_APPLYER_DASHBOARD_ORIGIN`; existing Render API and localhost permissions remain explicit.
+- Verification: extension tests pass (5), including a mocked Chrome API assertion of the exact visible-window API call and URL scheme rejection; `npm run build:dev` and editor diagnostics pass.
+- Not verified yet: Chrome itself is not launched in this environment, so actual visible-window behavior still requires loading the unpacked build locally. The selected-text and backend workflow is not wired yet. The workflow is intentionally user-selected text rather than automated scrolling or bulk extraction to avoid violating site terms.
+- Next: add user-scoped extension endpoints for recruiter run creation, selected-text persistence, run completion, and events; retain current one-use pairing, heartbeat, and task APIs.
+
+### Authenticated pairing and extraction — phases 4–5 (2026-10-12)
+
+- Reused existing one-use, hashed pairing codes, expiring extension bearer tokens, heartbeat, dashboard pairing bridge, and per-user extension token guard. Added bearer-authenticated extension endpoints for owner-scoped recruiter run creation, selected-post submission, and run completion.
+- Recruiter captures invoke the existing `RecruiterService` extraction and persistence pipeline, including all extracted email addresses, source-key deduplication, duplicate refresh behavior, owner-scoped `RecruiterLead` saves, and persisted activity events. A selected post can omit email. Extension capture requires explicit selected text (one at a time), never searches, scrolls, or bulk-reads a page. Run state is persisted in `chrome.storage.local` so the popup can recover after service-worker restart.
+- External HTTPS source URLs are retained for explicit selected-post captures, while existing local LinkedIn URL normalization remains unchanged. Extension runs are tagged in Mongo and dashboard stop requests do not signal the local Playwright runner.
+- Verification: backend build passes; focused recruiter/extension service tests pass (21 tests), including extracted multiple emails and external HTTPS source persistence; extension build and tests pass (5). No deployed Render/Atlas round-trip has been performed.
+- Next: surface extension-created runs, activity, and saved leads in Recruiter Discovery and add user-facing local pairing/capture guidance.
+
+### Dashboard progress — phase 6 (2026-10-12)
+
+- Recruiter Discovery now detects new owner-scoped extension runs while open, selects the latest extension run (unless a run was explicitly selected in the URL), subscribes to its existing persisted SSE activity, polls run counters, and refreshes saved recruiter leads on post events.
+- The dashboard distinguishes extension runs from local browser runs and explains the manual selected-text workflow. The main Dashboard now links to Recruiter Discovery and explains how to start and capture from the extension. Fixed the popup pairing-code field to accept the backend's full 48-character code.
+- Verification: frontend TypeScript/Vite production build passes; extension build/tests pass (6); backend recruiter/extension/token-guard tests pass (23). Existing Browserslist stale-data and bundle-size warnings remain.
+- Next: add focused tests for selection handling, extension run authorization/failure behavior, and resilient worker/API interactions, then run all relevant suites before packaging.

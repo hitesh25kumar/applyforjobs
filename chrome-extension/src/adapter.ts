@@ -41,6 +41,14 @@ function readJobPosting(): JobListing | null {
   return null;
 }
 
+function readSelectedPost(): SelectedPost | null {
+  const currentUrl = new URL(location.href);
+  if (currentUrl.protocol !== 'https:' && currentUrl.hostname !== 'localhost') return null;
+  const text = window.getSelection()?.toString().trim().slice(0, 40000) || '';
+  if (!text) return null;
+  return { text, url: currentUrl.href.slice(0, 2048), title: document.title.slice(0, 250) };
+}
+
 function fillVisibleForm(profile: Record<string, string>): { filled: number; unsupported: string[] } {
   const fields: Array<[RegExp, keyof typeof profile]> = [
     [/first.?name/i, 'firstName'],

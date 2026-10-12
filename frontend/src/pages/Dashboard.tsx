@@ -488,6 +488,9 @@ npm run linkedin:local -- --api ${import.meta.env.DEV ? 'http://localhost:3000' 
                             An alternative to the local browser agent. It uses your current Chrome tab only when you ask,
                             prepares matching form fields, and always leaves review and submission to you.
                         </p>
+                        <a href="/recruiter-discovery" className="mt-2 inline-flex text-sm font-semibold text-blue-700 hover:underline">
+                            Open recruiter discovery and live extension progress
+                        </a>
                     </div>
                     <div className="flex items-center gap-3">
                         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${extensionStatus ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
@@ -563,6 +566,7 @@ npm run linkedin:local -- --api ${import.meta.env.DEV ? 'http://localhost:3000' 
                     <li>Open <code>chrome://extensions</code>, enable Developer mode, and choose Load unpacked once.</li>
                     <li>After the extension is installed, Pair extension connects automatically; if it is not detected, enter the displayed code in the extension popup.</li>
                     <li>Open a supported job page and click Prepare current job; review the form and submit it yourself.</li>
+                    <li>For recruiter posts, open Recruiter Discovery, start a capture from the extension popup, select one post's text, and click Capture selected post. Progress and saved lead records appear there.</li>
                 </ol>
                 <div className="mt-5 space-y-3">
                     <h4 className="text-sm font-semibold text-slate-900">Extension application assistance</h4>

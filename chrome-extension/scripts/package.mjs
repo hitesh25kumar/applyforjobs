@@ -15,11 +15,9 @@ if (apiUrl.protocol !== 'https:' && apiUrl.hostname !== 'localhost') {
 const manifestPath = new URL('manifest.json', output);
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const apiHostPermission = `${apiUrl.protocol}//${apiUrl.host}/*`;
-const dashboardHostPermissions = [
-  'http://localhost:5173/*',
-  'https://*.web.app/*',
-  'https://*.firebaseapp.com/*',
-];
+const isDevelopment = process.env.NODE_ENV === 'development';
+const dashboardHostPermissions = isDevelopment ? ['http://localhost:5173/*'] : [];
+const dashboardMatches = isDevelopment ? ['http://localhost:5173/*'] : [];
 const dashboardOrigin = process.env.JOB_APPLYER_DASHBOARD_ORIGIN;
 if (dashboardOrigin) {
   const dashboardUrl = new URL(dashboardOrigin);
@@ -28,10 +26,11 @@ if (dashboardOrigin) {
   }
   const exactDashboardMatch = `${dashboardUrl.protocol}//${dashboardUrl.host}/*`;
   dashboardHostPermissions.push(exactDashboardMatch);
-  for (const script of manifest.content_scripts || []) {
-    script.matches.push(exactDashboardMatch);
-  }
+  dashboardMatches.push(exactDashboardMatch);
 }
+manifest.content_scripts = dashboardMatches.length
+  ? [{ matches: [...new Set(dashboardMatches)], js: ['dashboard-bridge.js'], run_at: 'document_start' }]
+  : [];
 manifest.host_permissions = [...new Set([...dashboardHostPermissions, apiHostPermission])];
 await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 const popupPath = new URL('popup.html', output);

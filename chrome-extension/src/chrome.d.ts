@@ -34,6 +34,9 @@ declare namespace chrome {
       args?: unknown[];
     }): Promise<Array<{ result?: T }>>;
   }
+  namespace windows {
+    function create(details: { url: string; focused?: boolean; type?: 'normal' }): Promise<{ id?: number }>;
+  }
 }
 
 declare function importScripts(...urls: string[]): void;

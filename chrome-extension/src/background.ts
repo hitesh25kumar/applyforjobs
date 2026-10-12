@@ -1,12 +1,107 @@
 const CONNECTION_KEY = 'jobApplyerConnection';
 const HEARTBEAT_ALARM = 'jobApplyerHeartbeat';
 const RETRY_KEY = 'jobApplyerRetryCount';
+const ACTIVE_RUN_KEY = 'jobApplyerActiveRecruiterRun';
 
 importScripts('adapter.js');
 
 async function getConnection(): Promise<StoredConnection | null> {
   const stored = await chrome.storage.local.get([CONNECTION_KEY]);
   return (stored[CONNECTION_KEY] as StoredConnection | undefined) || null;
+}
+
+async function openVisibleAutomationWindow(targetUrl: string): Promise<number> {
+  let url: URL;
+  try {
+    url = new URL(targetUrl);
+  } catch {
+    throw new Error('Enter a valid HTTPS post-search or source page URL.');
+  }
+  if (url.protocol !== 'https:' && url.hostname !== 'localhost') {
+    throw new Error('Only HTTPS pages (or localhost during development) can be opened.');
+  }
+
+  const created = await chrome.windows.create({ url: url.href, focused: true, type: 'normal' });
+  if (typeof created.id !== 'number') throw new Error('Chrome did not return the new window ID.');
+  return created.id;
+}
+
+async function finishRecruiterRun(connection: StoredConnection, run: RecruiterRun): Promise<void> {
+  await apiRequest(connection, `/extension/recruiter/runs/${encodeURIComponent(run.id)}/complete`, 'POST');
+  await chrome.storage.local.remove([ACTIVE_RUN_KEY]);
+}
+
+async function startRecruiterRun(targetUrl: string): Promise<ExtensionResponse> {
+  const connection = await getConnection();
+  if (!connection) throw new Error('Pair the extension from your dashboard before starting a recruiter run.');
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(targetUrl);
+  } catch {
+    throw new Error('Enter a valid HTTPS post-search or source page URL.');
+  }
+  if (parsedUrl.protocol !== 'https:' && parsedUrl.hostname !== 'localhost') {
+    throw new Error('Only HTTPS pages (or localhost during development) can be opened.');
+  }
+
+  const stored = await chrome.storage.local.get([ACTIVE_RUN_KEY]);
+  const previousRun = stored[ACTIVE_RUN_KEY] as RecruiterRun | undefined;
+  if (previousRun) await finishRecruiterRun(connection, previousRun);
+
+  const run = await apiRequest<{ _id: string; maxPosts: number }>(
+    connection,
+    '/extension/recruiter/runs',
+    'POST',
+    { maxPosts: 25 },
+  );
+  const activeRun = { id: run._id, maxPosts: run.maxPosts };
+  await chrome.storage.local.set({ [ACTIVE_RUN_KEY]: activeRun });
+  try {
+    const windowId = await openVisibleAutomationWindow(parsedUrl.href);
+    return {
+      ok: true,
+      runId: activeRun.id,
+      windowId,
+      message: 'Visible Chrome window opened. Select post text manually, then capture it from the extension.',
+    };
+  } catch (error) {
+    await finishRecruiterRun(connection, activeRun);
+    throw error;
+  }
+}
+
+async function captureSelectedPost(): Promise<ExtensionResponse> {
+  const connection = await getConnection();
+  if (!connection) throw new Error('Pair the extension from your dashboard before capturing a post.');
+  const stored = await chrome.storage.local.get([ACTIVE_RUN_KEY]);
+  const run = stored[ACTIVE_RUN_KEY] as RecruiterRun | undefined;
+  if (!run) throw new Error('Start Automation before capturing selected post text.');
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (!tab?.id || !tab.url?.startsWith('https://') && !tab.url?.startsWith('http://localhost')) {
+    throw new Error('Select post text on an HTTPS page, then open the extension popup.');
+  }
+  const [{ result: selected }] = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: readSelectedPost,
+  });
+  if (!selected?.text) throw new Error('Select the post text in the visible page first. No page content was sent.');
+  const result = await apiRequest<{ accepted: boolean; postNumber: number }>(
+    connection,
+    `/extension/recruiter/runs/${encodeURIComponent(run.id)}/posts`,
+    'POST',
+    { postText: selected.text, sourceUrl: selected.url },
+  );
+  const reachedPostLimit = result.postNumber >= run.maxPosts;
+  if (reachedPostLimit) await finishRecruiterRun(connection, run);
+  return {
+    ok: true,
+    runId: run.id,
+    postNumber: result.postNumber,
+    message: reachedPostLimit
+      ? `Post ${result.postNumber} saved. The run reached its ${run.maxPosts}-post limit and was completed.`
+      : `Selected post saved to your recruiter leads (capture ${result.postNumber}).`,
+  };
 }
 
 async function apiRequest<T>(
@@ -102,7 +197,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
       try {
         await apiRequest(connection, '/extension/heartbeat', 'POST');
-        return { ok: true, status: 'connected' };
+        const stored = await chrome.storage.local.get([ACTIVE_RUN_KEY]);
+        const run = stored[ACTIVE_RUN_KEY] as RecruiterRun | undefined;
+        return { ok: true, status: 'connected', runId: run?.id };
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Connection failed.';
         if (message.includes('Pairing expired')) {
@@ -110,6 +207,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         }
         return { ok: false, status: 'error', message };
       }
+    }
+    if (message.type === 'start-visible-automation') {
+      if (!message.targetUrl) throw new Error('Enter a post-search or source page URL first.');
+      return await startRecruiterRun(message.targetUrl);
+    }
+    if (message.type === 'capture-selected-post') {
+      return await captureSelectedPost();
+    }
+    if (message.type === 'finish-recruiter-run') {
+      const connection = await getConnection();
+      if (!connection) throw new Error('Pair the extension from your dashboard before finishing the run.');
+      const stored = await chrome.storage.local.get([ACTIVE_RUN_KEY]);
+      const run = stored[ACTIVE_RUN_KEY] as RecruiterRun | undefined;
+      if (!run) throw new Error('There is no active recruiter run to finish.');
+      await finishRecruiterRun(connection, run);
+      return { ok: true, runId: run.id, message: 'Recruiter run finished. Saved leads and progress remain in the dashboard.' };
     }
     if (message.type === 'pair' || message.type === 'page-pair') {
       const apiBaseUrl = (message.apiBaseUrl || '').replace(/\/+$/, '');
@@ -129,6 +242,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         );
       }
       const token = await response.json() as { token: string; expiresAt: string };
+      await chrome.storage.local.remove([ACTIVE_RUN_KEY]);
       await chrome.storage.local.set({ [CONNECTION_KEY]: { apiBaseUrl, ...token } satisfies StoredConnection });
       return { ok: true, status: 'connected' };
     }
@@ -139,11 +253,25 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
     if (message.type === 'disconnect') {
       const connection = await getConnection();
+      let runWarning = '';
       if (connection) {
-        await apiRequest(connection, '/extension/disconnect', 'POST').catch(() => undefined);
+        const stored = await chrome.storage.local.get([ACTIVE_RUN_KEY]);
+        const run = stored[ACTIVE_RUN_KEY] as RecruiterRun | undefined;
+        if (run) {
+          try {
+            await finishRecruiterRun(connection, run);
+          } catch (error) {
+            runWarning = error instanceof Error ? error.message : 'The active run could not be finalized.';
+          }
+        }
+        await apiRequest(connection, '/extension/disconnect', 'POST');
       }
-      await chrome.storage.local.remove([CONNECTION_KEY]);
-      return { ok: true, status: 'disconnected' };
+      await chrome.storage.local.remove([CONNECTION_KEY, ACTIVE_RUN_KEY]);
+      return {
+        ok: true,
+        status: 'disconnected',
+        message: runWarning || undefined,
+      };
     }
     return { ok: false, message: 'Unsupported extension request.' };
   })().then(sendResponse).catch((error: unknown) => sendResponse({

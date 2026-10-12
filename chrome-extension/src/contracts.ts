@@ -9,12 +9,15 @@ interface JobListing {
 }
 
 interface ExtensionMessage {
-  type: 'status' | 'pair' | 'prepare-current-job' | 'fill-current-form' | 'disconnect' | 'page-pair';
+  type: 'status' | 'pair' | 'prepare-current-job' | 'fill-current-form' | 'disconnect' | 'page-pair'
+    | 'start-visible-automation' | 'capture-selected-post' | 'finish-recruiter-run';
   code?: string;
   apiBaseUrl?: string;
   profile?: Record<string, string>;
   taskId?: string;
   requestId?: string;
+  targetUrl?: string;
+  runId?: string;
 }
 
 interface ExtensionResponse {
@@ -23,6 +26,9 @@ interface ExtensionResponse {
   message?: string;
   taskId?: string;
   job?: JobListing;
+  windowId?: number;
+  runId?: string;
+  postNumber?: number;
 }
 
 interface StoredConnection {
@@ -35,4 +41,15 @@ interface TaskRecord {
   id: string;
   state: string;
   job: JobListing;
+}
+
+interface SelectedPost {
+  text: string;
+  url: string;
+  title: string;
+}
+
+interface RecruiterRun {
+  id: string;
+  maxPosts: number;
 }
